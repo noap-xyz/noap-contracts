@@ -85,6 +85,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         string memory tokenURI = collection.tokenURI(tokenID);
 
         // Burn the source NFT
+        collection.transferFrom(_msgSender(), address(this), tokenID);
         collection.burn(tokenID);
 
         // Load the event obj from the URI, creating a new event ID if non-existent
@@ -331,6 +332,14 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         return exists;
     }
     /* -- END batch methods */
+
+    function getLastTokenID() public view returns (uint) {
+        return tokenIDCounter;
+    }
+
+    function getLastEventID() public view returns (uint) {
+        return eventIDCounter;
+    }
 
     /* -- BEGIN IRelayRecipient overrides -- */
     function _msgSender() internal override(Context, BaseRelayRecipient) view returns (address payable) {
