@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // https://github.com/OpenZeppelin/openzeppelin-contracts/commit/8e0296096449d9b1cd7c5631e917330635244c37
 import 'openzeppelin-solidity/contracts/utils/EnumerableSet.sol';
-import 'openzeppelin-solidity/contracts/utils/Address.sol';
 import 'openzeppelin-solidity/contracts/token/ERC721/ERC721Burnable.sol';
 import 'openzeppelin-solidity/contracts/cryptography/ECDSA.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
@@ -13,6 +12,7 @@ pragma solidity 0.6.12;
 
 contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
     using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     string private constant ERROR_INVALID_INPUTS = "Each field must have the same number of values";
 
@@ -22,6 +22,8 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         string tokenURI;
         EnumerableSet.AddressSet minters;
     }
+
+    mapping(address => EnumerableSet.UintSet) private userEventIDs;
 
     mapping(uint256 => Evt) evts;
     mapping(uint256 => uint256) private tokenToEventID;
@@ -125,6 +127,8 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         Evt storage evt = evts[eventID];
         evt.minters.add(_msgSender());
         evt.royalty = _msgSender();
+
+        userEventIDs[_msgSender()].add(eventID);
     }
 
     /**
@@ -149,6 +153,8 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         Evt storage evt = evts[eventID];
         _checkSenderIsMinter(evt);
         evt.minters.add(minter);
+
+        userEventIDs[minter].add(eventID);
     }
 
     function renounceEventMinter(
@@ -157,6 +163,8 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         Evt storage evt = evts[eventID];
         _checkSenderIsMinter(evt);
         evt.minters.remove(_msgSender());
+
+        userEventIDs[_msgSender()].remove(eventID);
     }
 
     function _checkSenderIsMinter(
@@ -339,6 +347,30 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
 
     function getLastEventID() public view returns (uint) {
         return eventIDCounter;
+    }
+
+    function getUserEventTotal(
+        address user
+    ) public view returns (uint256) {
+        return userEventIDs[user].length();
+    }
+
+    function getUserEventAt(
+        address user,
+        uint256 index
+    ) public view returns (uint256) {
+        return userEventIDs[user].at(index);
+    }
+
+    function getUserEventIDs(
+        address user
+    ) public view returns (uint256[] memory) {
+        uint256 numEvents = getUserEventTotal(user);
+        uint256[] memory eventIDs = new uint256[](numEvents);
+        for (uint i = 0; i < numEvents; i++) {
+            eventIDs[i] = getUserEventAt(user, i);
+        }
+        return eventIDs;
     }
 
     /* -- BEGIN IRelayRecipient overrides -- */
