@@ -1,12 +1,12 @@
 # NOAP
 
-The **No**tarized **A**ttendance **P**rotocol (and corresponding assets, NOAPs), are a way for event coordinators to notarize participation and issue digital receipts to event attendees
+The **No**tarized **A**ttendance **P**rotocol (and corresponding assets, NOAPs), are a way for event coordinators to notarize participation and issue digital receipts to event attendees.
 
 ## NOAP: Primary issuance mechanism
 
 In order to issue NOAPs, one must first create an event. **Anyone can create an event.** In order to create an event, one needs the URL to the asset metadata (an NFT JSON file) which is submitted in the contract call to create the event. A given metadata URL can only be used for one event, however a single event can generate many NOAPs.
 
-By default, the event creator has the `minter` privilege, allowing them to issue NOAPs to participants. A minter can add other minters, renounce their minting functionality, and change the royalty recipient in the event NOAPs are sold on a secondary market. The royalty percentage is hardcoded to 10%, and the default recipient is the
+By default, the event creator has the `minter` privilege, allowing them to issue NOAPs to participants. A minter can add other minters, renounce their minting functionality, and change the royalty recipient in the event NOAPs are sold on a secondary market. The default royalty recipient is the event event creator, and the royalty rate is hardcoded to 10%.
 
 Anyone with `minter` capabilities can mint NOAPs to any address, without limitation. If an event minter calls `endEvent`, minting will halt and no new NOAPs can be issued for a given event.
 
