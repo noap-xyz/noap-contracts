@@ -211,12 +211,17 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         return keccak256(abi.encode(tokenContract, tokenURI));
     }
 
+    function getEventMinterTotal(
+        uint256 eventID
+    ) public view returns (uint256) {
+        return evts[eventID].minters.length();
+    }
+
     function getEventMinterAt(
         uint256 eventID,
         uint256 index
     ) public view returns (address) {
         return evts[eventID].minters.at(index);
-
     }
 
     function getEventIsMinter(
@@ -249,6 +254,38 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         uint256 eventID
     ) public view returns (address) {
         return evts[eventID].royalty;
+    }
+
+    function getLastTokenID() public view returns (uint) {
+        return tokenIDCounter;
+    }
+
+    function getLastEventID() public view returns (uint) {
+        return eventIDCounter;
+    }
+
+    function getUserEventTotal(
+        address user
+    ) public view returns (uint256) {
+        return userEventIDs[user].length();
+    }
+
+    function getUserEventAt(
+        address user,
+        uint256 index
+    ) public view returns (uint256) {
+        return userEventIDs[user].at(index);
+    }
+
+    function getUserEventIDs(
+        address user
+    ) public view returns (uint256[] memory) {
+        uint256 numEvents = getUserEventTotal(user);
+        uint256[] memory eventIDs = new uint256[](numEvents);
+        for (uint i = 0; i < numEvents; i++) {
+            eventIDs[i] = getUserEventAt(user, i);
+        }
+        return eventIDs;
     }
 
     /**
@@ -294,38 +331,6 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         uint256 tokenID
     ) external view returns (bool) {
         return _isApprovedOrOwner(spender, tokenID);
-    }
-
-    function getLastTokenID() public view returns (uint) {
-        return tokenIDCounter;
-    }
-
-    function getLastEventID() public view returns (uint) {
-        return eventIDCounter;
-    }
-
-    function getUserEventTotal(
-        address user
-    ) public view returns (uint256) {
-        return userEventIDs[user].length();
-    }
-
-    function getUserEventAt(
-        address user,
-        uint256 index
-    ) public view returns (uint256) {
-        return userEventIDs[user].at(index);
-    }
-
-    function getUserEventIDs(
-        address user
-    ) public view returns (uint256[] memory) {
-        uint256 numEvents = getUserEventTotal(user);
-        uint256[] memory eventIDs = new uint256[](numEvents);
-        for (uint i = 0; i < numEvents; i++) {
-            eventIDs[i] = getUserEventAt(user, i);
-        }
-        return eventIDs;
     }
 
     /* -- BEGIN batch methods */
