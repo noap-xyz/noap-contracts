@@ -18,6 +18,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
 
     struct Evt {
         bool ended;
+        uint64 minted;
         address royalty;
         string tokenURI;
         EnumerableSet.AddressSet minters;
@@ -196,6 +197,9 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         uint256 tokenID = ++tokenIDCounter;
         _mint(recipient, tokenID);
 
+        // Increment the minted counter
+        evts[eventID].minted++;
+
         // Map the token back to the Event
         tokenToEventID[tokenID] = eventID;
     }
@@ -205,6 +209,46 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         string memory tokenURI
     ) internal pure returns (bytes32) {
         return keccak256(abi.encode(tokenContract, tokenURI));
+    }
+
+    function getEventMinterAt(
+        uint256 eventID,
+        uint256 index
+    ) public view returns (address) {
+        return evts[eventID].minters.at(index);
+
+    }
+
+    function getEventIsMinter(
+        uint256 eventID,
+        address addr
+    ) public view returns (bool) {
+        return evts[eventID].minters.contains(addr);
+    }
+
+    function getEventMintedSupply(
+        uint256 eventID
+    ) public view returns (uint64) {
+        return evts[eventID].minted;
+
+    }
+
+    function getEventTokenURI(
+        uint256 eventID
+    ) public view returns (string memory) {
+        return evts[eventID].tokenURI;
+    }
+
+    function getEventEnded(
+        uint256 eventID
+    ) public view returns (bool) {
+        return evts[eventID].ended;
+    }
+
+    function getEventRoyaltyAddress(
+        uint256 eventID
+    ) public view returns (address) {
+        return evts[eventID].royalty;
     }
 
     /**
@@ -250,6 +294,38 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         uint256 tokenID
     ) external view returns (bool) {
         return _isApprovedOrOwner(spender, tokenID);
+    }
+
+    function getLastTokenID() public view returns (uint) {
+        return tokenIDCounter;
+    }
+
+    function getLastEventID() public view returns (uint) {
+        return eventIDCounter;
+    }
+
+    function getUserEventTotal(
+        address user
+    ) public view returns (uint256) {
+        return userEventIDs[user].length();
+    }
+
+    function getUserEventAt(
+        address user,
+        uint256 index
+    ) public view returns (uint256) {
+        return userEventIDs[user].at(index);
+    }
+
+    function getUserEventIDs(
+        address user
+    ) public view returns (uint256[] memory) {
+        uint256 numEvents = getUserEventTotal(user);
+        uint256[] memory eventIDs = new uint256[](numEvents);
+        for (uint i = 0; i < numEvents; i++) {
+            eventIDs[i] = getUserEventAt(user, i);
+        }
+        return eventIDs;
     }
 
     /* -- BEGIN batch methods */
@@ -317,61 +393,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
             safeTransferFrom(froms[i], tos[i], tokenIDs[i], datas[i]);
         }
     }
-
-    function isApprovedOrOwnerBatch(
-        address[] memory spenders,
-        uint256[] memory tokenIDs
-    ) external view returns (bool[] memory) {
-        require(spenders.length == tokenIDs.length, ERROR_INVALID_INPUTS);
-        bool[] memory approvals = new bool[](spenders.length);
-        for (uint256 i = 0; i < spenders.length; ++i) {
-            approvals[i] = _isApprovedOrOwner(spenders[i], tokenIDs[i]);
-        }
-        return approvals;
-    }
-
-    function existsBatch(
-        uint256[] memory tokenIDs
-    ) external view returns (bool[] memory) {
-        bool[] memory exists = new bool[](tokenIDs.length);
-        for (uint256 i = 0; i < tokenIDs.length; ++i) {
-            exists[i] = _exists(tokenIDs[i]);
-        }
-        return exists;
-    }
     /* -- END batch methods */
-
-    function getLastTokenID() public view returns (uint) {
-        return tokenIDCounter;
-    }
-
-    function getLastEventID() public view returns (uint) {
-        return eventIDCounter;
-    }
-
-    function getUserEventTotal(
-        address user
-    ) public view returns (uint256) {
-        return userEventIDs[user].length();
-    }
-
-    function getUserEventAt(
-        address user,
-        uint256 index
-    ) public view returns (uint256) {
-        return userEventIDs[user].at(index);
-    }
-
-    function getUserEventIDs(
-        address user
-    ) public view returns (uint256[] memory) {
-        uint256 numEvents = getUserEventTotal(user);
-        uint256[] memory eventIDs = new uint256[](numEvents);
-        for (uint i = 0; i < numEvents; i++) {
-            eventIDs[i] = getUserEventAt(user, i);
-        }
-        return eventIDs;
-    }
 
     /* -- BEGIN IRelayRecipient overrides -- */
     function _msgSender() internal override(Context, BaseRelayRecipient) view returns (address payable) {
