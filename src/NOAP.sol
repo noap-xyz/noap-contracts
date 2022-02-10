@@ -18,7 +18,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
 
     struct Evt {
         bool ended;
-        uint64 minted;
+        uint64 supply;
         address royalty;
         string tokenURI;
         EnumerableSet.AddressSet minters;
@@ -198,7 +198,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         _mint(recipient, tokenID);
 
         // Increment the minted counter
-        evts[eventID].minted++;
+        evts[eventID].supply++;
 
         // Map the token back to the Event
         tokenToEventID[tokenID] = eventID;
@@ -234,7 +234,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
     function getEventMintedSupply(
         uint256 eventID
     ) public view returns (uint64) {
-        return evts[eventID].minted;
+        return evts[eventID].supply;
 
     }
 
@@ -324,6 +324,11 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
     function tokenURI(uint256 tokenID) public view virtual override returns (string memory) {
         require(_exists(tokenID), "ERC721Metadata: URI query for nonexistent token");
         return evts[tokenToEventID[tokenID]].tokenURI;
+    }
+
+    function burn(uint256 tokenID) public virtual override {
+        super.burn(tokenID);
+        evts[tokenToEventID[tokenID]].supply--;
     }
 
     function isApprovedOrOwner(

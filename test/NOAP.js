@@ -91,4 +91,14 @@ describe('NOAP', () => {
         await NOAPContract.connect(minterA).endEvent(eventID);
         await expect(NOAPContract.connect(minterA).mint(eventID, recipientA.address)).to.be.reverted;
     });
+
+    it('tracks supply of NOAPs too', async () => {
+        const eventID = await NOAPContract.getLastEventID();
+        const supplyBefore = await NOAPContract.getEventMintedSupply(eventID);
+        const tokenID = await NOAPContract.getLastTokenID();
+        await NOAPContract.connect(recipientB).burn(tokenID);
+        const supplyAfter = await NOAPContract.getEventMintedSupply(eventID);
+        expect(supplyAfter.toNumber()).to.equal(supplyBefore.toNumber() - 1);
+        await expect(NOAPContract.ownerOf(tokenID)).to.be.reverted;
+    });
 });
