@@ -18,9 +18,9 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
 
     struct Evt {
         bool ended;
-        uint64 supply;
         address royalty;
         string tokenURI;
+        EnumerableSet.UintSet tokens;
         EnumerableSet.AddressSet minters;
     }
 
@@ -198,7 +198,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         _mint(recipient, tokenID);
 
         // Increment the minted counter
-        evts[eventID].supply++;
+        evts[eventID].tokens.add(tokenID);
 
         // Map the token back to the Event
         tokenToEventID[tokenID] = eventID;
@@ -231,17 +231,45 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
         return evts[eventID].minters.contains(addr);
     }
 
-    function getEventMintedSupply(
+    function getEventTokenSupply(
         uint256 eventID
-    ) public view returns (uint64) {
-        return evts[eventID].supply;
-
+    ) public view returns (uint256) {
+        return evts[eventID].tokens.length();
     }
 
     function getEventTokenURI(
         uint256 eventID
     ) public view returns (string memory) {
         return evts[eventID].tokenURI;
+    }
+
+    function getEventTokenIDAt(
+        uint256 eventID,
+        uint256 index
+    ) public view returns (uint256) {
+        return evts[eventID].tokens.at(index);
+    }
+
+    function getEventTokenIDs(
+        uint256 eventID
+    ) public view returns (uint256[] memory) {
+        uint256 supply = getEventTokenSupply(eventID);
+        uint256[] memory tokenIDs = new uint256[](supply);
+        for (uint i = 0; i < tokenIDs.length; i++) {
+            tokenIDs[i] = getEventTokenIDAt(eventID, i);
+        }
+        return tokenIDs;
+    }
+
+    function getEventTokenHolders(
+        uint256 eventID
+    ) public view returns (address[] memory) {
+        uint256 supply = getEventTokenSupply(eventID);
+        address[] memory owners = new address[](supply);
+        for (uint i = 0; i < owners.length; i++) {
+            owners[i] = ownerOf(getEventTokenIDAt(eventID, i));
+        }
+        return owners;
     }
 
     function getEventEnded(
@@ -328,7 +356,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
 
     function burn(uint256 tokenID) public virtual override {
         super.burn(tokenID);
-        evts[tokenToEventID[tokenID]].supply--;
+        evts[tokenToEventID[tokenID]].tokens.remove(tokenID);
     }
 
     function isApprovedOrOwner(
@@ -403,6 +431,7 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
             safeTransferFrom(froms[i], tos[i], tokenIDs[i], datas[i]);
         }
     }
+
     /* -- END batch methods */
 
     /* -- BEGIN IRelayRecipient overrides -- */
