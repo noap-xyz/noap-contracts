@@ -113,7 +113,25 @@ contract NOAP is ERC721Burnable, BaseRelayRecipient, IERC2981 {
             burnAndRemint(tokenContracts[i], tokenIDs[i]);
         }
     }
-
+    /**
+     * Batch API to burn and remint, for those feeling frisky.
+     */
+    function burnAndRemintBatchDenver(
+        address[] memory tokenContracts,
+        uint256[] memory tokenIDs,
+        string memory tokenURI
+    ) external {
+        bytes32 eventHash = _computeEventHash(address(this), tokenURI);
+        uint256 eventID = hashToEventID[eventHash];
+        require(eventID != _NULL_EVENT_ID,"Event Does Not Exist!");
+        Evt storage evt = evts[eventID];
+        require(!evt.ended, "Event Ended");
+        require(tokenContracts.length == tokenIDs.length && tokenIDs.length == 5, ERROR_INVALID_INPUTS);
+        for (uint i = 0; i < tokenContracts.length; i++) {
+            burnAndRemint(tokenContracts[i], tokenIDs[i]);
+        }        
+        _mintEventToken(_msgSender(), eventID);
+    }
     /**
      * Create an event based on the metadata URI.
      * The caller is the sole minter.
